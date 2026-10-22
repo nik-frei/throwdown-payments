@@ -19,6 +19,7 @@
     </div>
 
     <form method="post" action="/admin/matchup/<%= m.id %>">
+      <input type="hidden" name="event_tz" value="<%= TZ %>">
       <div class="row">
         <div class="field"><label>Status</label>
           <select name="status"><% for (const s of Object.keys(STATUS)) { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= STATUS[s].label %></option><% } %></select>
@@ -26,6 +27,17 @@
         <div class="field"><label>Target $</label><input name="target_dollars" type="number" value="<%= m.target_cents / 100 %>"></div>
         <div class="field"><label>Deadline</label><input name="deadline" type="date" value="<%= new Date(m.deadline).toISOString().slice(0,10) %>"></div>
         <div class="field" style="flex:2"><label>Video URL (YouTube)</label><input name="video_url" value="<%= m.video_url || '' %>" placeholder="https://youtube.com/watch?v=…"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field"><label>Debate date &amp; time (<%= TZ.replace('America/','').replace('_',' ') %>)</label><input name="event_at" type="datetime-local" value="<%= m.event_at ? new Date(m.event_at).toLocaleString('sv-SE', { timeZone: TZ }).replace(' ', 'T').slice(0,16) : '' %>"></div>
+        <div class="field"><label>Where (shown publicly)</label><input name="event_where" value="<%= m.event_where || '' %>" placeholder="Live on X Spaces · Zoom · The Comedy Cellar, NYC"></div>
+        <div class="field" style="flex:2"><label>Watch / join link</label><input name="event_url" value="<%= m.event_url || '' %>" placeholder="https://x.com/i/spaces/… or stream link"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field" style="flex:3"><label>Details (format, moderator, rules — shown on the page)</label><textarea name="event_details" rows="2" placeholder="Moderated by …. 90 minutes: openings, cross-examination, audience Q&A, closings."><%= m.event_details || '' %></textarea></div>
+        <div class="field"><label>Crowd's verdict (after)</label>
+          <select name="winner"><option value="">— none —</option><option value="a" <%= m.winner === 'a' ? 'selected' : '' %>><%= m.a_name %></option><option value="b" <%= m.winner === 'b' ? 'selected' : '' %>><%= m.b_name %></option><option value="draw" <%= m.winner === 'draw' ? 'selected' : '' %>>Draw</option></select>
+        </div>
       </div>
       <div class="row" style="margin-top:10px">
         <label class="check"><input type="checkbox" name="a_accepted" <%= m.a_accepted ? 'checked' : '' %>> <%= m.a_name %> accepted</label>

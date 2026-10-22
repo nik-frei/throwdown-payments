@@ -145,6 +145,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .video { aspect-ratio: 16/9; background: #000; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); margin: 24px 0; }
 .video iframe { width: 100%; height: 100%; border: 0; }
 
+/* ---- event home (funded → recorded) ---- */
+.event { background: linear-gradient(180deg, rgba(255,59,59,.10), rgba(255,59,59,.03)); border: 1px solid rgba(255,59,59,.35); border-radius: var(--radius); padding: 22px 24px; margin-bottom: 16px; }
+.event.event-done { background: rgba(53,208,127,.06); border-color: rgba(53,208,127,.35); margin-top: 20px; }
+.event-top { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+.event-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.event-done .event-label { color: var(--green); }
+.event-when { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.2; }
+.event-where { color: var(--muted); font-size: 15px; margin-top: 4px; }
+.event-pot { text-align: right; }
+.event-pot b { display: block; font-size: 28px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+.event-pot span { font-size: 12px; color: var(--muted); }
+.event-actions { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+.event-details { margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.08); color: #d6d6de; font-size: 15px; white-space: pre-line; line-height: 1.5; }
+.event-result { margin-top: 14px; font-size: 16px; }
+.event-result b { color: var(--green); }
+
 /* ---- forms (propose) ---- */
 .form-page { max-width: 620px; margin: 0 auto; padding: 48px 20px 80px; }
 .form-page h1 { font-size: 40px; letter-spacing: -0.04em; font-weight: 900; margin: 0 0 8px; line-height: 1.05; }
@@ -185,6 +201,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   .toast { order: -3; }
   .timeline { grid-template-columns: repeat(2, 1fr); }
   .split { grid-template-columns: repeat(2, 1fr); }
+  .event-pot { text-align: left; }
   .hero { padding: 48px 0 28px; }
   .nav .hide-sm { display: none; }
   .stats { gap: 24px; }

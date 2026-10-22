@@ -7,11 +7,17 @@
     open: ['Open', `Taking pledges until ${new Date(m.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`],
     funded: ['Funded', 'Target hit. Debaters invited.'],
     accepted: ["It's on", 'Both accepted. Cards charged.'],
-    scheduled: ['Scheduled', 'Date set.'],
+    scheduled: ['Scheduled', m.event_at ? fmtWhenShort(m.event_at) : 'Date set.'],
     recorded: ['Recorded', 'Watch it.'],
   };
-  const tweet = encodeURIComponent(`${money(m.pledged_cents)} on the table for ${m.a_name} vs. ${m.b_name}: "${m.question}"\n\nBack it →`);
   const isOpen = m.status === 'open';
+  const isOn = ['accepted', 'scheduled', 'recorded'].includes(m.status);
+  const pot = m.charged_cents != null ? m.charged_cents : m.pledged_cents;
+  const upcoming = m.event_at && new Date(m.event_at) > Date.now();
+  const tweet = encodeURIComponent(
+    m.status === 'recorded' ? `${m.a_name} vs. ${m.b_name}: "${m.question}"\n\nThe crowd put up ${money(pot)} to make this happen. Watch →`
+    : isOn ? `It's on. ${m.a_name} vs. ${m.b_name}: "${m.question}"${m.event_at ? `\n\n${fmtWhen(m.event_at)}` : ''}\n\nFunded by the crowd on Throwdown →`
+    : `${money(m.pledged_cents)} on the table for ${m.a_name} vs. ${m.b_name}: "${m.question}"\n\nBack it →`);
   const embed = m.video_url ? m.video_url.replace(/watch\?v=([^&]+).*/, 'embed/$1').replace('youtu.be/', 'www.youtube.com/embed/') : null;
 %>
 <%- include('partials/head', { description }) %>
@@ -26,7 +32,43 @@
       <p class="q"><%= m.question %></p>
     </div>
 
+    <% if (isOn && !embed) { %>
+    <div class="event">
+      <div class="event-top">
+        <div>
+          <div class="event-label"><%= m.status === 'scheduled' ? (upcoming ? 'Happening' : 'Happened') : "It's on" %></div>
+          <div class="event-when"><%= m.event_at ? fmtWhen(m.event_at) : 'Date coming soon' %></div>
+          <% if (m.event_where) { %><div class="event-where"><%= m.event_where %></div><% } %>
+        </div>
+        <div class="event-pot num"><b><%= money(pot) %></b><span>put up by <%= m.backer_count %> backer<%= m.backer_count === 1 ? '' : 's' %></span></div>
+      </div>
+      <% if (m.event_url || gcal(m)) { %>
+      <div class="event-actions">
+        <% if (m.event_url) { %><a class="btn btn-primary" href="<%= m.event_url %>" target="_blank" rel="noopener"><%= upcoming || !m.event_at ? 'Watch live' : 'Watch' %> →</a><% } %>
+        <% if (gcal(m) && upcoming) { %><a class="btn btn-ghost" href="<%= gcal(m) %>" target="_blank" rel="noopener">Add to calendar</a><% } %>
+      </div>
+      <% } %>
+      <% if (m.event_details) { %><div class="event-details"><%= m.event_details %></div><% } %>
+      <% if (!m.event_at) { %><p class="fine">Both debaters have accepted and the pot is locked. We'll post the date here and email every backer.</p><% } %>
+    </div>
+    <% } %>
+
     <% if (embed) { %><div class="video"><iframe src="<%= embed %>" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div><% } %>
+
+    <% if (m.status === 'recorded') { %>
+    <div class="event event-done">
+      <div class="event-top">
+        <div>
+          <div class="event-label">Recorded</div>
+          <div class="event-when"><%= m.event_at ? fmtWhen(m.event_at) : '' %><%= m.event_where ? ` · ${m.event_where}` : '' %></div>
+        </div>
+        <div class="event-pot num"><b><%= money(pot) %></b><span>put up by <%= m.backer_count %> backer<%= m.backer_count === 1 ? '' : 's' %></span></div>
+      </div>
+      <% if (m.winner) { %><div class="event-result">Crowd's verdict: <b><%= m.winner === 'draw' ? 'Draw' : (m.winner === 'a' ? m.a_name : m.b_name) %></b></div><% } %>
+      <% if (m.event_details) { %><div class="event-details"><%= m.event_details %></div><% } %>
+      <% if (!embed && m.event_url) { %><div class="event-actions"><a class="btn btn-primary" href="<%= m.event_url %>" target="_blank" rel="noopener">Watch →</a></div><% } %>
+    </div>
+    <% } %>
 
     <div class="hero-vs">
       <div class="side">
@@ -72,11 +114,21 @@
   </div>
 
   <aside class="panel">
+    <% if (isOn) { %>
+    <div class="big num"><%= money(pot) %></div>
+    <div class="sub"><%= m.charged_cents != null ? 'collected' : 'pledged' %> · target was <b class="num" style="color:var(--text)"><%= money(m.target_cents) %></b></div>
+    <div class="bar full"><i style="width:100%"></i></div>
+    <div class="kv num"><span>Each debater</span><b><%= money(Math.round(pot * SPLIT.debater / 100)) %></b></div>
+    <div class="kv num"><span>Backers</span><b><%= m.backer_count %></b></div>
+    <% if (m.event_at) { %><div class="kv num"><span><%= upcoming ? 'When' : 'Was' %></span><b><%= fmtWhenShort(m.event_at) %></b></div><% } %>
+    <% if (m.event_where) { %><div class="kv"><span>Where</span><b><%= m.event_where %></b></div><% } %>
+    <% } else { %>
     <div class="big num"><%= money(m.pledged_cents) %></div>
     <div class="sub">pledged of <b class="num" style="color:var(--text)"><%= money(m.target_cents) %></b> target</div>
     <div class="bar<%= isFunded(m) ? ' full' : '' %>"><i style="width:<%= pct(m) %>%"></i></div>
     <div class="kv num"><span>Funded</span><b><%= pct(m) %>%</b></div>
     <div class="kv num"><span>Backers</span><b><%= m.backer_count %></b></div>
+    <% } %>
     <% if (isOpen) { %><div class="kv num"><span>Time left</span><b><%= daysLeft(m) %> days</b></div><% } %>
     <% if (isOpen) { %><div class="kv num"><span>Each debater gets</span><b><%= money(Math.round(m.target_cents * SPLIT.debater / 100)) %>+</b></div><% } %>
 
@@ -97,8 +149,10 @@
         <button class="btn btn-primary btn-block" type="submit" id="pledge-btn"><span>Pledge $<span id="amt-label"><%= values.amount_cents ? values.amount_cents / 100 : 50 %></span></span></button>
         <p class="fine">Your card is saved, not charged. It's only charged if this hits <%= money(m.target_cents) %> and both debaters accept. Otherwise nothing happens. By pledging you agree to the <a href="/terms" style="color:var(--text)">terms</a>.</p>
       </form>
-    <% } else if (isFunded(m)) { %>
-      <p class="fine" style="font-size:14px;color:var(--text);margin-top:16px">This one's funded. Pledges are closed; backers will be charged once both debaters accept.</p>
+    <% } else if (m.status === 'funded') { %>
+      <p class="fine" style="font-size:14px;color:var(--text);margin-top:16px">Target hit. Pledges are closed while we invite the debaters; cards are charged only once both accept.</p>
+    <% } else if (isOn && m.event_url && !embed) { %>
+      <a class="btn btn-primary btn-block" style="margin-top:16px" href="<%= m.event_url %>" target="_blank" rel="noopener"><%= upcoming || !m.event_at ? 'Watch live' : 'Watch' %> →</a>
     <% } %>
 
     <div class="share">

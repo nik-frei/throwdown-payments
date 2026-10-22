@@ -1,7 +1,7 @@
 <a class="card" href="/m/<%= m.slug %>">
   <div class="card-top">
     <span class="chip <%= m.status %>"><span class="dot"></span><%= STATUS[m.status].label %></span>
-    <span class="muted num" style="font-size:13px"><%= m.status === 'open' ? `${daysLeft(m)} days left` : (m.status === 'recorded' ? 'Watch' : '') %></span>
+    <span class="muted num" style="font-size:13px"><%= m.status === 'open' ? `${daysLeft(m)} days left` : (m.status === 'recorded' ? 'Watch' : (m.event_at ? fmtWhenShort(m.event_at) : '')) %></span>
   </div>
   <div class="vs">
     <div class="side"><%- include('avatar', { name: m.a_name, handle: m.a_handle }) %><div class="name"><%= m.a_name %></div></div>

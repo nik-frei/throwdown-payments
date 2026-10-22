@@ -16,9 +16,20 @@
   </div>
 </section>
 
+<% if (happening.length) { %>
 <section class="section">
   <div class="wrap">
-    <div class="section-head"><h2>Live matchups</h2><a href="/new" class="muted" style="font-size:14px">+ Propose one</a></div>
+    <div class="section-head"><h2>Happening</h2></div>
+    <div class="grid">
+      <% for (const m of happening) { %><%- include('partials/matchup-card', { m }) %><% } %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<section class="section"<%= happening.length ? ' style="padding-top:0"' : '' %>>
+  <div class="wrap">
+    <div class="section-head"><h2>Taking pledges</h2><a href="/new" class="muted" style="font-size:14px">+ Propose one</a></div>
     <% if (!open.length) { %>
       <div class="empty">No open matchups yet. <a href="/new" style="color:var(--text)">Propose the first one.</a></div>
     <% } else { %>

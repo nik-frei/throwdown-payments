@@ -61,8 +61,8 @@ Optional knobs: `MIN_TARGET_DOLLARS` (default 5000), `DEADLINE_DAYS` (default 75
 1. A matchup funds → status shows **Funded**, pledges close.
 2. Email the two debaters. In `/admin`, tick each one's **accepted** box as they say yes.
 3. Both accepted → press **Charge all pledges**. Status becomes **It's on**, backers are emailed.
-4. Set a date → change status to **Scheduled**.
-5. Afterward, paste the YouTube link into **Video URL**, set status to **Recorded**. Backers get a "watch it" email and the video embeds on the matchup page.
+4. Set a date → fill in **Debate date & time**, **Where**, the **Watch / join link**, and any **Details** (moderator, format), then change status to **Scheduled**. The matchup page becomes the event's home: date, place, "Watch live," "Add to calendar," and the locked pot. Works whether the debate is on X Spaces, Zoom, YouTube, or in a room somewhere.
+5. Afterward, paste the YouTube link into **Video URL**, optionally pick the **Crowd's verdict**, set status to **Recorded**. Backers get a "watch it" email and the video embeds on the matchup page.
 6. Pay the debaters and the proposer from your Stripe balance.
 
 If a debater declines, set the status to **Cancelled**. Nothing was charged, so there's nothing to refund.

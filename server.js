@@ -38,10 +38,27 @@ const STATUS = {
   expired:   { label: "Expired",    blurb: "Didn't fund in time — no one was charged" },
   cancelled: { label: "Cancelled",  blurb: "No one was charged" },
 };
+const TZ = process.env.DISPLAY_TZ || "America/New_York";
+const fmtWhen = (d) => new Date(d).toLocaleString("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+const fmtWhenShort = (d) => new Date(d).toLocaleString("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+// "2026-11-03T19:00" typed in TZ → the real instant. Uses the zone's offset at that date (handles DST).
+function localToUtc(local, tz) {
+  const guess = new Date(local + "Z");
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(guess).map((p) => [p.type, p.value]));
+  const asIfUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour, +parts.minute);
+  return new Date(guess.getTime() - (asIfUtc - guess.getTime()));
+}
+const gcal = (m) => {
+  if (!m.event_at) return null;
+  const st = new Date(m.event_at), en = new Date(st.getTime() + 90 * 60000);
+  const z = (d) => d.toISOString().replace(/[-:]|\.\d{3}/g, "");
+  const q = new URLSearchParams({ action: "TEMPLATE", text: `${m.a_name} vs. ${m.b_name} — Throwdown`, dates: `${z(st)}/${z(en)}`, details: `${m.question}${m.event_url ? "\nWatch: " + m.event_url : ""}`, location: m.event_where || "" });
+  return `https://calendar.google.com/calendar/render?${q}`;
+};
 const isFunded = (m) => ["funded", "accepted", "scheduled", "recorded"].includes(m.status);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-app.locals = { ...app.locals, money, pct, daysLeft, STATUS, isFunded, SITE_NAME, SPLIT, MIN_PLEDGE, MIN_TARGET, DEADLINE_DAYS, DEMO: pay.DEMO, esc };
+app.locals = { ...app.locals, money, pct, daysLeft, STATUS, isFunded, fmtWhen, fmtWhenShort, gcal, TZ, SITE_NAME, SPLIT, MIN_PLEDGE, MIN_TARGET, DEADLINE_DAYS, DEMO: pay.DEMO, esc };
 
 // ---------- middleware ----------
 // Stripe webhook needs the raw body, so it's registered before the body parser.
@@ -66,12 +83,13 @@ app.use((req, res, next) => { res.locals.baseUrl = pay.baseUrl(req); res.locals.
 // ---------- public pages ----------
 app.get("/", async (req, res) => {
   await db.expireStale();
-  const [open, done, s] = await Promise.all([
-    db.listMatchups({ statuses: ["open", "funded", "accepted", "scheduled"] }),
+  const [open, happening, done, s] = await Promise.all([
+    db.listMatchups({ statuses: ["open"] }),
+    db.listMatchups({ statuses: ["funded", "accepted", "scheduled"] }),
     db.listMatchups({ statuses: ["recorded"], limit: 6 }),
     db.stats(),
   ]);
-  res.render("home", { open, done, stats: s, title: null });
+  res.render("home", { open, happening, done, stats: s, title: null });
 });
 
 app.get("/how", (req, res) => res.render("how", { title: "How it works" }));
@@ -188,6 +206,11 @@ app.post("/admin/matchup/:id", adminAuth, async (req, res) => {
   fields.video_url = (b.video_url || "").trim() || null;
   fields.note = (b.note || "").trim() || null;
   if (b.deadline) fields.deadline = new Date(b.deadline);
+  fields.event_at = b.event_at ? localToUtc(b.event_at, TZ) : null;
+  fields.event_where = (b.event_where || "").trim() || null;
+  fields.event_url = (b.event_url || "").trim() || null;
+  fields.event_details = (b.event_details || "").trim() || null;
+  fields.winner = ["a", "b", "draw"].includes(b.winner) ? b.winner : null;
   if (b.target_dollars) fields.target_cents = Math.round(Number(b.target_dollars) * 100);
   await db.updateMatchup(id, fields);
 
@@ -220,7 +243,10 @@ app.post("/admin/matchup/:id/charge", adminAuth, async (req, res) => {
       console.error(`charge failed for pledge ${p.id}: ${r.error}`);
     }
   }
-  if (["open", "funded"].includes(m.status)) await db.updateMatchup(id, { status: "accepted", a_accepted: true, b_accepted: true });
+  const collected = (await db.pledgesFor(id)).filter((p) => p.status === "charged").reduce((s, p) => s + p.amount_cents, 0);
+  const upd = { charged_cents: collected };
+  if (["open", "funded"].includes(m.status)) Object.assign(upd, { status: "accepted", a_accepted: true, b_accepted: true });
+  await db.updateMatchup(id, upd);
   res.redirect(`/admin?msg=${encodeURIComponent(`Charged ${ok} pledge${ok === 1 ? "" : "s"}${failed ? `, ${failed} failed` : ""}.`)}#m${id}`);
 });
 
