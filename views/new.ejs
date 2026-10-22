@@ -1,0 +1,70 @@
+<%- include('partials/head') %>
+
+<div class="form-page">
+  <h1>Propose a debate.</h1>
+  <p class="lead">Name two people, write the question, set the target, and put the first dollars in. If it funds, you earn <%= SPLIT.proposer %>% of the pot for proposing it.</p>
+
+  <% if (error) { %><div class="alert"><%= error %></div><% } %>
+
+  <form method="post" action="/new">
+    <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off">
+
+    <fieldset>
+      <legend>The matchup</legend>
+      <div class="two">
+        <div class="field">
+          <label>Debater A</label>
+          <input name="a_name" placeholder="Full name" value="<%= values.a_name || '' %>" required maxlength="60">
+        </div>
+        <div class="field">
+          <label>Their X handle <span class="muted" style="text-transform:none;letter-spacing:0">(optional, for the photo)</span></label>
+          <div class="prefix"><span>@</span><input name="a_handle" placeholder="handle" value="<%= values.a_handle || '' %>" maxlength="30"></div>
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>Debater B</label>
+          <input name="b_name" placeholder="Full name" value="<%= values.b_name || '' %>" required maxlength="60">
+        </div>
+        <div class="field">
+          <label>Their X handle</label>
+          <div class="prefix"><span>@</span><input name="b_handle" placeholder="handle" value="<%= values.b_handle || '' %>" maxlength="30"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>The question</label>
+        <input name="question" placeholder="Is a wealth tax a good idea?" value="<%= values.question || '' %>" required maxlength="160">
+        <div class="hint">One line. A real question with a yes and a no.</div>
+      </div>
+      <div class="field">
+        <label>Target</label>
+        <div class="prefix"><span>$</span><input name="target" inputmode="numeric" placeholder="25,000" value="<%= values.target_cents ? values.target_cents / 100 : '' %>" required></div>
+        <div class="hint">Minimum <%= money(MIN_TARGET) %>. Each debater gets <%= SPLIT.debater %>% of whatever it reaches — make it worth their time. Matchups have <%= DEADLINE_DAYS %> days to fund.</div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Your pledge</legend>
+      <div class="two">
+        <div class="field">
+          <label>Your name</label>
+          <input name="name" placeholder="Shown on the backer list" value="<%= values.name || '' %>" required maxlength="60">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input name="email" type="email" placeholder="you@example.com" value="<%= values.email || '' %>" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Amount</label>
+        <div class="prefix"><span>$</span><input name="amount" inputmode="numeric" placeholder="50" value="<%= values.amount_cents ? values.amount_cents / 100 : '' %>" required></div>
+        <div class="hint">Minimum <%= money(MIN_PLEDGE) %>. Your card is saved, not charged, until the debate is funded and both debaters accept.</div>
+      </div>
+    </fieldset>
+
+    <button class="btn btn-primary btn-block" type="submit">Continue to save a card →</button>
+    <p class="fine">By pledging you authorize Throwdown to charge the amount above only if this debate reaches its target and both debaters accept. If it doesn't fund by the deadline, your card is never charged. By continuing you agree to the <a href="/terms" style="color:var(--text)">terms</a>.</p>
+  </form>
+</div>
+
+<%- include('partials/foot') %>

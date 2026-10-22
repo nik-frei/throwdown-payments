@@ -1,0 +1,68 @@
+<%- include('partials/head') %>
+
+<div class="wrap admin" style="padding:32px 20px 80px">
+  <h1 style="letter-spacing:-0.03em;font-size:28px;margin:0 0 6px">Admin</h1>
+  <p class="muted" style="margin:0 0 24px">You're the only one who sees this. <%= DEMO ? 'Running in demo mode (no Stripe key) — "charge" just marks pledges as charged.' : '' %></p>
+  <% if (msg) { %><div class="toast"><%= msg %></div><% } %>
+
+  <% for (const m of all) { const ps = pledgesByMatchup[m.id]; %>
+  <div class="m" id="m<%= m.id %>">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <a href="/m/<%= m.slug %>" style="font-weight:800;font-size:18px;letter-spacing:-0.02em"><%= m.a_name %> vs. <%= m.b_name %></a>
+        <div class="muted" style="font-size:13px"><%= m.question %></div>
+      </div>
+      <div class="num" style="text-align:right">
+        <span class="chip <%= m.status %>"><%= STATUS[m.status].label %></span>
+        <div style="font-weight:800;font-size:18px;margin-top:4px"><%= money(m.pledged_cents) %> <span class="muted" style="font-weight:400;font-size:13px">/ <%= money(m.target_cents) %> · <%= m.backer_count %> backers · <%= daysLeft(m) %>d left</span></div>
+      </div>
+    </div>
+
+    <form method="post" action="/admin/matchup/<%= m.id %>">
+      <div class="row">
+        <div class="field"><label>Status</label>
+          <select name="status"><% for (const s of Object.keys(STATUS)) { %><option value="<%= s %>" <%= m.status === s ? 'selected' : '' %>><%= STATUS[s].label %></option><% } %></select>
+        </div>
+        <div class="field"><label>Target $</label><input name="target_dollars" type="number" value="<%= m.target_cents / 100 %>"></div>
+        <div class="field"><label>Deadline</label><input name="deadline" type="date" value="<%= new Date(m.deadline).toISOString().slice(0,10) %>"></div>
+        <div class="field" style="flex:2"><label>Video URL (YouTube)</label><input name="video_url" value="<%= m.video_url || '' %>" placeholder="https://youtube.com/watch?v=…"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="check"><input type="checkbox" name="a_accepted" <%= m.a_accepted ? 'checked' : '' %>> <%= m.a_name %> accepted</label>
+        <label class="check"><input type="checkbox" name="b_accepted" <%= m.b_accepted ? 'checked' : '' %>> <%= m.b_name %> accepted</label>
+        <label class="check"><input type="checkbox" name="featured" <%= m.featured ? 'checked' : '' %>> Featured (pin to top)</label>
+        <div class="field" style="flex:2"><input name="note" value="<%= m.note || '' %>" placeholder="Private note (who you've emailed, etc.)"></div>
+        <button class="btn btn-ghost btn-sm" type="submit">Save</button>
+      </div>
+    </form>
+
+    <% const chargeable = ps.filter(p => p.status === 'pledged'); %>
+    <% if (chargeable.length && !['expired','cancelled'].includes(m.status)) { %>
+    <form method="post" action="/admin/matchup/<%= m.id %>/charge" style="margin-top:14px" onsubmit="return confirm('Charge <%= chargeable.length %> saved cards for <%= money(chargeable.reduce((s,p)=>s+p.amount_cents,0)) %>? Only do this once both debaters have accepted.')">
+      <button class="btn btn-primary btn-sm" type="submit">Charge all <%= chargeable.length %> pledges (<%= money(chargeable.reduce((s,p)=>s+p.amount_cents,0)) %>)</button>
+      <span class="muted" style="font-size:13px;margin-left:10px">Only once both have accepted. This also sets status to "It's on" and emails backers.</span>
+    </form>
+    <% } %>
+
+    <details style="margin-top:14px">
+      <summary class="muted" style="cursor:pointer;font-size:14px">Pledges (<%= ps.length %>) · proposer: <%= m.proposer_name || '—' %> <%= m.proposer_email ? `<${m.proposer_email}>` : '' %></summary>
+      <table style="margin-top:10px">
+        <tr><th>Name</th><th>Email</th><th>Amount</th><th>Status</th><th>Stripe</th><th>When</th></tr>
+        <% for (const p of ps) { %>
+        <tr>
+          <td><%= p.name %><%= p.is_proposer ? ' ★' : '' %></td>
+          <td><%= p.email %></td>
+          <td class="num"><%= money(p.amount_cents, { cents: true }) %></td>
+          <td class="<%= p.status === 'charged' ? 'good' : (p.status === 'failed' ? 'bad' : '') %>"><%= p.status %></td>
+          <td class="muted" style="font-size:12px"><%= p.stripe_pi_id || p.stripe_customer_id || (DEMO ? 'demo' : '') %></td>
+          <td class="muted" style="font-size:12px"><%= new Date(p.created_at).toLocaleDateString('en-US') %></td>
+        </tr>
+        <% } %>
+      </table>
+    </details>
+  </div>
+  <% } %>
+  <% if (!all.length) { %><div class="empty">No matchups yet.</div><% } %>
+</div>
+
+<%- include('partials/foot') %>

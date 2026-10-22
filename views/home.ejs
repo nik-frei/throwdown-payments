@@ -1,0 +1,43 @@
+<%- include('partials/head') %>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Put money on the debate <em>you</em> want to see.</h1>
+    <p>Propose a matchup. Back it with real money. When the number gets big enough and both debaters say yes, it happens. If it doesn't, nobody pays a cent.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="/new">Propose a debate</a>
+      <a class="btn btn-ghost" href="/how">How it works</a>
+    </div>
+    <div class="stats num">
+      <div class="stat"><b><%= money(stats.pledged_cents) %></b><span>Pledged</span></div>
+      <div class="stat"><b><%= open.length %></b><span>Open matchups</span></div>
+      <div class="stat"><b><%= stats.pledges %></b><span>Backers</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head"><h2>Live matchups</h2><a href="/new" class="muted" style="font-size:14px">+ Propose one</a></div>
+    <% if (!open.length) { %>
+      <div class="empty">No open matchups yet. <a href="/new" style="color:var(--text)">Propose the first one.</a></div>
+    <% } else { %>
+      <div class="grid">
+        <% for (const m of open) { %><%- include('partials/matchup-card', { m }) %><% } %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<% if (done.length) { %>
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-head"><h2>Recorded</h2></div>
+    <div class="grid">
+      <% for (const m of done) { %><%- include('partials/matchup-card', { m }) %><% } %>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('partials/foot') %>

@@ -1,0 +1,4 @@
+<%
+  // usage: include('partials/avatar', { name, handle, lg })
+  const initials = name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+%><div class="avatar<%= typeof lg !== 'undefined' && lg ? ' lg' : '' %>"><%= initials %><% if (handle) { %><img src="https://unavatar.io/x/<%= encodeURIComponent(handle) %>?fallback=false" alt="<%= name %>" loading="lazy"><% } %></div>

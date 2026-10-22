@@ -1,0 +1,48 @@
+<%- include('partials/head') %>
+
+<div class="how">
+  <h1>Terms.</h1>
+  <p class="muted" style="font-size:15px">Last updated October 22, 2026. Plain English on purpose. If you pledge, propose, or debate on Throwdown, you're agreeing to this.</p>
+
+  <h2>1. What Throwdown is</h2>
+  <p>Throwdown is a platform where people pledge money toward a proposed debate between two named people. Throwdown runs the platform, invites the debaters, collects the money, and pays out. Throwdown is not a party to the debate itself and does not control what either debater says or does.</p>
+
+  <h2>2. Pledging</h2>
+  <p>When you pledge, you enter an amount and save a payment card. <strong>You are not charged at that time.</strong> By saving your card, you authorize Throwdown to charge it, once, for the exact amount you pledged, if and only if both of these happen:</p>
+  <ol>
+    <li>the matchup reaches its target before its deadline, and</li>
+    <li>both debaters agree to participate.</li>
+  </ol>
+  <p>If either doesn't happen, your card is never charged and your pledge simply lapses. Because no money changed hands, there is nothing to refund.</p>
+  <p>Pledges are commitments. Once you pledge, you can't withdraw it; the number on the page is only meaningful if it's real. If you need a pledge removed for a legitimate reason before it's charged, email us and we'll usually sort it out, but we don't promise to.</p>
+  <p>Your name and pledge amount are shown publicly on the matchup page. Your email is not.</p>
+
+  <h2>3. When cards are charged</h2>
+  <p>Once both debaters accept, Throwdown charges every pledge for that matchup. You'll get an email when it happens. Charges show up as "Throwdown" on your statement. If your card is declined, we may retry it and may email you to ask for a different card; if we can't collect, your pledge is dropped.</p>
+
+  <h2>4. The pot and the split</h2>
+  <p>The amount shown on a matchup page is the total pledged. The <strong>pot</strong> is the amount Throwdown actually collects after charging cards. These can differ, because some cards fail: they expire, get replaced, or get declined between the pledge and the charge.</p>
+  <p>Throwdown's fee is <strong><%= SPLIT.platform %>% of the total pledged at the time the matchup funded</strong>, and it is paid first, out of the collected funds. What remains is divided among the two debaters and the proposer in the ratio <%= SPLIT.debater %> : <%= SPLIT.debater %> : <%= SPLIT.proposer %>. So if every card clears, each debater receives <%= SPLIT.debater %>% of the total and the proposer receives <%= SPLIT.proposer %>%. If some cards fail, each of those shares is reduced proportionally.</p>
+  <p><strong>Throwdown does not guarantee that the pot will equal the total pledged.</strong> Debaters and proposers are paid from what is actually collected, and only from that. Throwdown is not liable to any debater, proposer, or backer for the difference between what was pledged and what was collected, and no one may rely on the pledged total as a promise of payment. We'll tell debaters the collected amount before the debate so there are no surprises.</p>
+
+  <h2>5. Debaters</h2>
+  <p>Being named in a matchup doesn't obligate anyone to anything. A debater accepts by telling us so in writing. By accepting, a debater agrees to show up for a debate on the question stated, in a format and on a date both debaters and Throwdown agree to, and to allow it to be recorded and published. Payment is made after the recording is delivered. Throwdown decides the format, moderation, and publishing details in consultation with the debaters, and has the final say.</p>
+  <p>If, after cards have been charged, the debate can't happen because a debater withdraws or the parties can't agree on logistics within a reasonable time, Throwdown will refund the backers in full. Debaters who withdraw after accepting aren't paid.</p>
+
+  <h2>6. Proposers</h2>
+  <p>Proposing a matchup requires a pledge, like anyone else's. The proposer's <%= SPLIT.proposer %>% share is paid on the same terms as the debaters', from collected funds, after the debate is recorded. Proposals must name real public figures and a genuine question. We can edit, merge, or remove proposals that are duplicative, defamatory, abusive, or not a real debate, and we can adjust a target or deadline when it makes sense.</p>
+
+  <h2>7. Taxes</h2>
+  <p>Amounts paid to debaters and proposers are income to them. Throwdown may require a tax form before paying out and will report payments as required by law.</p>
+
+  <h2>8. Our discretion</h2>
+  <p>Throwdown can cancel any matchup at any time before cards are charged, for any reason, and no one is charged. After cards are charged, we only cancel in the situations described above, with refunds. We can refuse service to anyone.</p>
+
+  <h2>9. No warranties, limited liability</h2>
+  <p>Throwdown is provided as is. We don't guarantee that any debate will happen, that any debater will accept, that any pledge will clear, or that the site will always be available. To the fullest extent the law allows, Throwdown's total liability to anyone in connection with a matchup is limited to the amount that person actually paid to Throwdown for that matchup.</p>
+
+  <h2>10. The usual</h2>
+  <p>These terms are governed by the laws of the State of Florida. We can update them; the date at the top changes when we do, and the version in force when you pledged is the one that applies to that pledge. Questions: <a href="mailto:hello@throwdown.me" style="color:var(--text)">hello@throwdown.me</a>.</p>
+</div>
+
+<%- include('partials/foot') %>

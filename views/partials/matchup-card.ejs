@@ -1,0 +1,17 @@
+<a class="card" href="/m/<%= m.slug %>">
+  <div class="card-top">
+    <span class="chip <%= m.status %>"><span class="dot"></span><%= STATUS[m.status].label %></span>
+    <span class="muted num" style="font-size:13px"><%= m.status === 'open' ? `${daysLeft(m)} days left` : (m.status === 'recorded' ? 'Watch' : '') %></span>
+  </div>
+  <div class="vs">
+    <div class="side"><%- include('avatar', { name: m.a_name, handle: m.a_handle }) %><div class="name"><%= m.a_name %></div></div>
+    <div class="v">VS</div>
+    <div class="side"><%- include('avatar', { name: m.b_name, handle: m.b_handle }) %><div class="name"><%= m.b_name %></div></div>
+  </div>
+  <p class="q"><%= m.question %></p>
+  <div class="bar<%= isFunded(m) ? ' full' : '' %>"><i style="width:<%= pct(m) %>%"></i></div>
+  <div class="meta num">
+    <span><b><%= money(m.pledged_cents) %></b> of <%= money(m.target_cents) %></span>
+    <span><%= m.backer_count %> backer<%= m.backer_count === 1 ? '' : 's' %></span>
+  </div>
+</a>

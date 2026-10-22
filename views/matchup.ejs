@@ -1,0 +1,126 @@
+<%
+  const description = `${money(m.pledged_cents)} pledged of ${money(m.target_cents)} to see ${m.a_name} debate ${m.b_name}: ${m.question}`;
+  const url = `${baseUrl}/m/${m.slug}`;
+  const steps = ['open', 'funded', 'accepted', 'scheduled', 'recorded'];
+  const idx = steps.indexOf(m.status);
+  const stepCopy = {
+    open: ['Open', `Taking pledges until ${new Date(m.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`],
+    funded: ['Funded', 'Target hit. Debaters invited.'],
+    accepted: ["It's on", 'Both accepted. Cards charged.'],
+    scheduled: ['Scheduled', 'Date set.'],
+    recorded: ['Recorded', 'Watch it.'],
+  };
+  const tweet = encodeURIComponent(`${money(m.pledged_cents)} on the table for ${m.a_name} vs. ${m.b_name}: "${m.question}"\n\nBack it →`);
+  const isOpen = m.status === 'open';
+  const embed = m.video_url ? m.video_url.replace(/watch\?v=([^&]+).*/, 'embed/$1').replace('youtu.be/', 'www.youtube.com/embed/') : null;
+%>
+<%- include('partials/head', { description }) %>
+
+<div class="wrap page">
+  <div class="page-main">
+    <% if (thanks) { %><div class="toast">You're in. Your pledge is saved and your card won't be charged unless this funds. Now make it happen — share it.</div><% } %>
+
+    <div class="page-head">
+      <span class="chip <%= m.status %>"><span class="dot"></span><%= STATUS[m.status].label %> — <%= STATUS[m.status].blurb %></span>
+      <h1><%= m.a_name %> <span style="color:var(--accent)">vs.</span> <%= m.b_name %></h1>
+      <p class="q"><%= m.question %></p>
+    </div>
+
+    <% if (embed) { %><div class="video"><iframe src="<%= embed %>" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div><% } %>
+
+    <div class="hero-vs">
+      <div class="side">
+        <%- include('partials/avatar', { name: m.a_name, handle: m.a_handle, lg: true }) %>
+        <div class="name"><%= m.a_name %></div>
+        <% if (m.a_handle) { %><a class="handle" href="https://x.com/<%= m.a_handle %>" target="_blank" rel="noopener">@<%= m.a_handle %></a><% } %>
+        <% if (m.a_accepted) { %><span class="accepted-tag">Accepted</span><% } else if (isFunded(m)) { %><span class="pending-tag">Invited</span><% } %>
+      </div>
+      <div class="v">VS</div>
+      <div class="side">
+        <%- include('partials/avatar', { name: m.b_name, handle: m.b_handle, lg: true }) %>
+        <div class="name"><%= m.b_name %></div>
+        <% if (m.b_handle) { %><a class="handle" href="https://x.com/<%= m.b_handle %>" target="_blank" rel="noopener">@<%= m.b_handle %></a><% } %>
+        <% if (m.b_accepted) { %><span class="accepted-tag">Accepted</span><% } else if (isFunded(m)) { %><span class="pending-tag">Invited</span><% } %>
+      </div>
+    </div>
+
+    <% if (!['expired','cancelled'].includes(m.status)) { %>
+    <div class="timeline">
+      <% steps.forEach((s, i) => { %>
+        <div class="step <%= i < idx ? 'done' : (i === idx ? 'now' : '') %>"><b><%= stepCopy[s][0] %></b><%= stepCopy[s][1] %></div>
+      <% }) %>
+    </div>
+    <% } else { %>
+      <div class="alert" style="margin-top:24px">This matchup <%= m.status === 'expired' ? "didn't reach its target in time" : 'was cancelled' %>. No one was charged.</div>
+    <% } %>
+
+    <h3>Where the money goes</h3>
+    <div class="split num">
+      <div><b><%= SPLIT.debater %>%</b><span><%= m.a_name %></span></div>
+      <div><b><%= SPLIT.debater %>%</b><span><%= m.b_name %></span></div>
+      <div><b><%= SPLIT.proposer %>%</b><span>Proposer<%= m.proposer_name ? ` (${m.proposer_name})` : '' %></span></div>
+      <div><b><%= SPLIT.platform %>%</b><span>Throwdown</span></div>
+    </div>
+
+    <div class="backers">
+      <h3><%= m.backer_count %> backer<%= m.backer_count === 1 ? '' : 's' %></h3>
+      <% if (!pledges.length) { %><p class="muted">Be the first.</p><% } %>
+      <% for (const p of pledges) { if (!['pledged','charged'].includes(p.status)) continue; %>
+        <div class="backer"><span><b><%= p.name %></b><% if (p.is_proposer) { %><small>proposed it</small><% } %></span><span class="num"><%= money(p.amount_cents) %></span></div>
+      <% } %>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="big num"><%= money(m.pledged_cents) %></div>
+    <div class="sub">pledged of <b class="num" style="color:var(--text)"><%= money(m.target_cents) %></b> target</div>
+    <div class="bar<%= isFunded(m) ? ' full' : '' %>"><i style="width:<%= pct(m) %>%"></i></div>
+    <div class="kv num"><span>Funded</span><b><%= pct(m) %>%</b></div>
+    <div class="kv num"><span>Backers</span><b><%= m.backer_count %></b></div>
+    <% if (isOpen) { %><div class="kv num"><span>Time left</span><b><%= daysLeft(m) %> days</b></div><% } %>
+    <% if (isOpen) { %><div class="kv num"><span>Each debater gets</span><b><%= money(Math.round(m.target_cents * SPLIT.debater / 100)) %>+</b></div><% } %>
+
+    <% if (isOpen) { %>
+      <% if (error) { %><div class="alert" style="margin-top:16px"><%= error %></div><% } %>
+      <form method="post" action="/m/<%= m.slug %>/pledge" id="pledge">
+        <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off">
+        <div class="amounts">
+          <% [25, 50, 100, 250].forEach((a, i) => { %>
+            <label><input type="radio" name="preset" value="<%= a %>" <%= (values.amount_cents ? values.amount_cents / 100 === a : i === 1) ? 'checked' : '' %>><span class="num">$<%= a %></span></label>
+          <% }) %>
+        </div>
+        <div class="field">
+          <div class="prefix"><span>$</span><input name="amount" id="amount" inputmode="numeric" placeholder="Custom amount" value="<%= values.amount_cents ? values.amount_cents / 100 : 50 %>" required></div>
+        </div>
+        <div class="field"><input name="name" placeholder="Your name (shown on the backer list)" value="<%= values.name || '' %>" required maxlength="60"></div>
+        <div class="field"><input name="email" type="email" placeholder="Email" value="<%= values.email || '' %>" required></div>
+        <button class="btn btn-primary btn-block" type="submit" id="pledge-btn"><span>Pledge $<span id="amt-label"><%= values.amount_cents ? values.amount_cents / 100 : 50 %></span></span></button>
+        <p class="fine">Your card is saved, not charged. It's only charged if this hits <%= money(m.target_cents) %> and both debaters accept. Otherwise nothing happens. By pledging you agree to the <a href="/terms" style="color:var(--text)">terms</a>.</p>
+      </form>
+    <% } else if (isFunded(m)) { %>
+      <p class="fine" style="font-size:14px;color:var(--text);margin-top:16px">This one's funded. Pledges are closed; backers will be charged once both debaters accept.</p>
+    <% } %>
+
+    <div class="share">
+      <a class="btn btn-ghost btn-sm" href="https://x.com/intent/post?text=<%= tweet %>&url=<%= encodeURIComponent(url) %>" target="_blank" rel="noopener">Post on X</a>
+      <button class="btn btn-ghost btn-sm" type="button" id="copy" data-url="<%= url %>">Copy link</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+  var amt = document.getElementById('amount'), label = document.getElementById('amt-label');
+  document.querySelectorAll('input[name=preset]').forEach(function (r) {
+    r.addEventListener('change', function () { amt.value = r.value; label.textContent = r.value; });
+  });
+  if (amt) amt.addEventListener('input', function () {
+    label.textContent = amt.value || '0';
+    document.querySelectorAll('input[name=preset]').forEach(function (r) { r.checked = (r.value === amt.value); });
+  });
+  var copy = document.getElementById('copy');
+  copy.addEventListener('click', function () {
+    navigator.clipboard.writeText(copy.dataset.url).then(function () { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy link'; }, 1500); });
+  });
+</script>
+
+<%- include('partials/foot') %>

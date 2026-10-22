@@ -1,120 +1,81 @@
-# Stripe Donation Invoice API
+# Throwdown
 
-Creates Stripe invoices with custom donation amounts. Users specify an amount, an invoice is created, and they're redirected to Stripe's hosted payment page.
+Crowdfunding for debates. Propose a matchup, back it with real money, and when the number gets big enough and both debaters say yes, it happens. Nobody is charged until then.
 
-## Quick Start
+One Node app, one Postgres database, Stripe for cards. That's the whole stack.
 
-### Option A: Deploy to Vercel (Recommended - Free tier)
+## How the money works
 
-1. **Install Vercel CLI:**
-   ```bash
-   npm i -g vercel
-   ```
+- A pledge saves a card through Stripe Checkout (setup mode). **Nothing is charged.**
+- When a matchup's pledges cross its target, it flips to **Funded** automatically. You contact the debaters.
+- Once both accept, you press **Charge all pledges** in the admin. Every saved card is charged off-session for exactly what was pledged, and backers get an email.
+- If it doesn't fund within the deadline (default 75 days), it expires on its own and no one is ever charged.
+- Payouts to the debaters and proposer are manual for now (Stripe Dashboard → transfer, or a check). Split is 40 / 40 / 10 / 10 — see `SPLIT` in `server.js`.
 
-2. **Deploy:**
-   ```bash
-   cd stripe-donation-api
-   vercel
-   ```
+## Pages
 
-3. **Add environment variable:**
-   - Go to your Vercel project dashboard
-   - Settings → Environment Variables
-   - Add: `STRIPE_SECRET_KEY` = your Stripe secret key (starts with `sk_`)
+| URL | What |
+| --- | --- |
+| `/` | Live matchups, sorted by money pledged |
+| `/new` | Propose a matchup (requires a pledge) |
+| `/m/:slug` | The matchup page — the thing people share |
+| `/m/:slug/card.png` | Auto-generated share image (used as the X/OG card) |
+| `/how` | How it works |
+| `/terms` | Terms — pledge authorization, the split, failed-payment disclaimer |
+| `/admin` | You only. Change status, mark debaters accepted, charge cards, add the video. |
 
-4. **Redeploy** to pick up the env var:
-   ```bash
-   vercel --prod
-   ```
+Headshots are pulled from X profile pictures via the handle (through unavatar.io). No uploads.
 
-5. Your API URL will be: `https://your-project.vercel.app/api/create-invoice`
+## Run it locally
 
----
-
-### Option B: Deploy to Render
-
-1. **Create a new Web Service** at [render.com](https://render.com)
-
-2. **Connect your repo** or use the following settings:
-   - Build Command: `npm install`
-   - Start Command: `npm start`
-
-3. **Add environment variable:**
-   - `STRIPE_SECRET_KEY` = your Stripe secret key
-
-4. Your API URL will be: `https://your-service.onrender.com/api/create-invoice`
-
----
-
-## Embed in Softr
-
-1. Open `embed/donation-form.html`
-
-2. Update the `API_ENDPOINT` variable with your deployed URL:
-   ```javascript
-   const API_ENDPOINT = 'https://your-api-url.vercel.app/api/create-invoice';
-   ```
-
-3. In Softr:
-   - Add a **Custom Code** or **Embed** block
-   - Paste the entire contents of the HTML file
-
-4. Customize the styling to match your site
-
----
-
-## Configuration
-
-### Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `STRIPE_SECRET_KEY` | Your Stripe secret key (sk_test_... or sk_live_...) |
-
-### Getting Your Stripe Key
-
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
-2. Developers → API Keys
-3. Use **test key** for testing, **live key** for production
-
----
-
-## API Reference
-
-### POST /api/create-invoice
-
-Creates a Stripe invoice and returns the hosted payment URL.
-
-**Request:**
-```json
-{
-  "amount": 25.00,
-  "email": "donor@example.com",
-  "description": "Donation"
-}
+```
+npm install
+cp .env.example .env     # fill in DATABASE_URL at minimum
+npm start
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "invoiceUrl": "https://invoice.stripe.com/i/acct_.../invst_...",
-  "invoiceId": "in_..."
-}
+With no `STRIPE_SECRET_KEY` the app runs in **demo mode**: pledges are recorded without a card so you can click through everything. The admin "charge" button just marks pledges as charged.
+
+## Deploy on Render
+
+1. Push this folder to a GitHub repo.
+2. In Render: **New → Blueprint**, pick the repo. `render.yaml` creates the web service and a Postgres database and wires `DATABASE_URL`.
+3. Set these environment variables on the web service:
+
+| Variable | Value |
+| --- | --- |
+| `ADMIN_PASSWORD` | anything — it's the password for `/admin` (username can be blank) |
+| `BASE_URL` | `https://throwdown.me` (or the Render URL until the domain's pointed) |
+| `STRIPE_SECRET_KEY` | from Stripe → Developers → API keys. Use the **test** key first. |
+| `STRIPE_WEBHOOK_SECRET` | see step 4 |
+| `RESEND_API_KEY` | from resend.com, after verifying your sending domain |
+| `EMAIL_FROM` | `Throwdown <hello@throwdown.me>` |
+
+4. In Stripe → Developers → Webhooks, add an endpoint `https://YOUR-DOMAIN/webhooks/stripe` listening for `checkout.session.completed`. Copy its signing secret into `STRIPE_WEBHOOK_SECRET`. (The app also records the pledge when the backer lands back on the site, so the webhook is a backstop, not a requirement — but set it up.)
+5. Point `throwdown.me` at the service in Render → Settings → Custom Domains.
+
+Optional knobs: `MIN_TARGET_DOLLARS` (default 5000), `DEADLINE_DAYS` (default 75).
+
+## Running a debate, start to finish
+
+1. A matchup funds → status shows **Funded**, pledges close.
+2. Email the two debaters. In `/admin`, tick each one's **accepted** box as they say yes.
+3. Both accepted → press **Charge all pledges**. Status becomes **It's on**, backers are emailed.
+4. Set a date → change status to **Scheduled**.
+5. Afterward, paste the YouTube link into **Video URL**, set status to **Recorded**. Backers get a "watch it" email and the video embeds on the matchup page.
+6. Pay the debaters and the proposer from your Stripe balance.
+
+If a debater declines, set the status to **Cancelled**. Nothing was charged, so there's nothing to refund.
+
+## Files
+
 ```
-
----
-
-## Security Notes
-
-- Never expose your `STRIPE_SECRET_KEY` in frontend code
-- In production, update CORS to only allow your Softr domain
-- Use Stripe's test mode keys while developing
-
----
-
-## Testing
-
-1. Use Stripe test mode keys
-2. Test card: `4242 4242 4242 4242`, any future expiry, any CVC
-3. Check invoices in Stripe Dashboard → Invoices
+server.js          routes, validation, admin
+lib/db.js          Postgres schema + queries (schema is created on boot)
+lib/payments.js    Stripe setup-mode checkout and off-session charging
+lib/email.js       Resend emails (skipped if no key)
+lib/card.js        share-card PNG renderer
+views/             EJS templates
+public/style.css   all the styling
+fonts/             Inter, for the share card
+```

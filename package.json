@@ -1,17 +1,23 @@
 {
-  "name": "stripe-donation-api",
+  "name": "throwdown",
   "version": "1.0.0",
-  "description": "Stripe Invoice API for custom donation amounts",
-  "main": "api/create-invoice.js",
+  "description": "Throwdown — crowdfunding for debates",
+  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "stripe": "^14.0.0",
-    "express": "^4.18.2",
-    "cors": "^2.8.5"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "ejs": "^7.0.2",
+    "express": "^5.3.0",
+    "pg": "^8.23.1",
+    "resend": "^6.34.1",
+    "satori": "^0.63.2",
+    "stripe": "^23.0.0"
   }
 }
